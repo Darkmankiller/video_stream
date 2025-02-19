@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Video Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .video-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .video-item {
+            width: 300px;
+            text-align: center;
+        }
+        video {
+            width: 100%;
+            height: auto;
+        }
+        .video-item button {
+            margin-top: 10px;
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .search-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .search-bar input {
+            padding: 10px;
+            width: 300px;
+            font-size: 16px;
+        }
+        /* Login Page Styles */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f3f3f3;
+        }
+        .login-form {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .login-form input {
+            padding: 10px;
+            margin: 10px 0;
+            width: 250px;
+            font-size: 16px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        .login-form button {
+            padding: 10px;
+            width: 100%;
+            background-color: green;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .login-form button:hover {
+            background-color: darkgreen;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Page -->
+    <div id="login-container" class="login-container">
+        <div class="login-form">
+            <h2>Admin Login</h2>
+            <form id="login-form">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <p id="error-message" style="color: red; text-align: center; display: none;">Invalid username or password</p>
+        </div>
+    </div>
+
+    <!-- Admin Panel (hidden until login) -->
+    <div id="admin-panel" style="display: none;">
+        <h1>Video Upload Admin Panel</h1>
+
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <input type="text" id="search-input" placeholder="Search by video title" onkeyup="searchVideos()">
+        </div>
+
+        <div class="video-container" id="video-list">
+            <!-- Video items will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <script>
+        let allVideos = []; // Array to store all videos
+        let filteredVideos = []; // Array to store filtered videos based on search query
+
+        const correctUsername = "green666";
+        const correctPassword = "Green&666";
+
+        // Function to handle login
+        document.getElementById("login-form").addEventListener("submit", function (e) {
+            e.preventDefault();
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            if (username === correctUsername && password === correctPassword) {
+                // Hide login and show admin panel
+                document.getElementById("login-container").style.display = "none";
+                document.getElementById("admin-panel").style.display = "block";
+                fetchVideos();
+            } else {
+                // Show error message
+                document.getElementById("error-message").style.display = "block";
+            }
+        });
+
+        // Fetch video data from the backend
+        function fetchVideos() {
+            fetch('/api/videos')
+                .then(response => response.json())
+                .then(videos => {
+                    allVideos = videos;
+                    filteredVideos = videos;
+                    displayVideos(filteredVideos); // Display videos initially
+                })
+                .catch(error => {
+                    console.error('Error fetching videos:', error);
+                });
+        }
+
+        // Function to display the video list
+        function displayVideos(videos) {
+            const videoList = document.getElementById('video-list');
+            videoList.innerHTML = ''; // Clear the video list before re-rendering
+
+            // Loop through the videos and display them
+            videos.forEach(video => {
+                const videoItem = document.createElement('div');
+                videoItem.classList.add('video-item');
+                videoItem.innerHTML = `
+                    <h3>${video.title}</h3>
+                    <video controls>
+                        <source src="/uploads/${video.filename}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <button onclick="deleteVideo('${video.filename}')">Delete Video</button>
+                `;
+                videoList.appendChild(videoItem);
+            });
+        }
+
+        // Function to search videos by title
+        function searchVideos() {
+            const searchQuery = document.getElementById('search-input').value.toLowerCase();
+
+            // Filter the videos based on the search query (case-insensitive)
+            filteredVideos = allVideos.filter(video => video.title.toLowerCase().includes(searchQuery));
+
+            // Display the filtered videos
+            displayVideos(filteredVideos);
+        }
+
+        // Function to delete a video
+        function deleteVideo(filename) {
+            fetch(`/api/videos/delete/${filename}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                // Refresh the video list after deleting
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Error deleting video:', error);
+            });
+        }
+    </script>
+
+</body>
+</html>

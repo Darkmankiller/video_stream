@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoShare</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding-top: 80px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #fff;
+            padding: 15px 30px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4c1d95;
+        }
+
+        .search-bar {
+            flex-grow: 1;
+            margin: 0 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            max-width: 500px;
+        }
+
+        /* Video Grid Layout */
+        .container {
+            max-width: 1300px;
+            margin: 100px auto 20px;
+            padding: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 10px;
+        }
+
+        .video-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .video-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+
+        .video-info {
+            padding: 12px;
+        }
+
+        .video-info h3 {
+            font-size: 16px;
+            margin: 5px 0;
+            color: #333;
+        }
+
+        .video-info p {
+            font-size: 13px;
+            color: #777;
+        }
+
+        /* Video Modal */
+        .video-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .video-modal.active {
+            display: flex;
+        }
+
+        .video-modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 700px;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: red;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+
+        .close-btn:hover {
+            background: darkred;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">🎬 VideoShare</div>
+        <input type="text" class="search-bar" placeholder="Search videos..." id="search">
+    </div>
+
+    <!-- Video Grid -->
+    <div class="container">
+        <div class="grid" id="videoGrid">
+            <!-- Videos will be loaded here dynamically -->
+        </div>
+    </div>
+
+    <!-- Video Modal -->
+    <div class="video-modal" id="videoModal">
+        <div class="video-modal-content">
+            <button class="close-btn" onclick="closeModal()">✖</button>
+            <video id="videoPlayer" controls style="width: 100%;"></video>
+        </div>
+    </div>
+
+    <script>
+        const videoGrid = document.getElementById("videoGrid");
+        const videoModal = document.getElementById("videoModal");
+        const videoPlayer = document.getElementById("videoPlayer");
+        const searchInput = document.getElementById("search");
+
+        // Fetch videos from API
+        async function fetchVideos() {
+            try {
+                const response = await fetch("http://localhost:5000/api/videos");
+                let videos = await response.json();
+                videos.sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded)); // Sort newest first
+                displayVideos(videos);
+            } catch (error) {
+                console.error("Failed to load videos", error);
+            }
+        }
+
+        // Display videos in grid
+        function displayVideos(videos) {
+            videoGrid.innerHTML = "";
+            videos.forEach(video => {
+                const videoCard = document.createElement("div");
+                videoCard.classList.add("video-card");
+                videoCard.innerHTML = `
+                    <img src="http://localhost:5000/uploads/${video.thumbnail}" alt="${video.title}">
+                    <div class="video-info">
+                        <h3>${video.title}</h3>
+                        <p>${formatViews(video.views)} views • ${formatTime(video.uploaded)}</p>
+                    </div>
+                `;
+                videoCard.onclick = () => openModal(video.filename);
+                videoGrid.appendChild(videoCard);
+            });
+        }
+
+        // Open video modal
+        function openModal(filename) {
+            videoPlayer.src = `http://localhost:5000/uploads/${filename}`;
+            videoModal.classList.add("active");
+        }
+
+        // Close video modal
+        function closeModal() {
+            videoModal.classList.remove("active");
+            videoPlayer.src = "";
+        }
+
+        // Close modal when clicking outside the video
+        videoModal.addEventListener("click", (e) => {
+            if (e.target === videoModal) {
+                closeModal();
+            }
+        });
+
+        // Format views
+        function formatViews(views) {
+            return views >= 1000000 ? (views / 1000000).toFixed(1) + "M" :
+                   views >= 1000 ? (views / 1000).toFixed(1) + "K" : views;
+        }
+
+        // Format time
+        function formatTime(timestamp) {
+            const now = new Date();
+            const uploadTime = new Date(timestamp);
+            const diff = now - uploadTime;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+            return days === 0 ? "Today" :
+                   days === 1 ? "Yesterday" :
+                   days < 7 ? days + " days ago" :
+                   days < 30 ? Math.floor(days / 7) + " weeks ago" :
+                   days < 365 ? Math.floor(days / 30) + " months ago" :
+                   Math.floor(days / 365) + " years ago";
+        }
+
+        // Search Functionality
+        searchInput.addEventListener("input", function () {
+            const query = searchInput.value.toLowerCase();
+            document.querySelectorAll(".video-card").forEach(card => {
+                const title = card.querySelector("h3").innerText.toLowerCase();
+                card.style.display = title.includes(query) ? "block" : "none";
+            });
+        });
+
+        fetchVideos();
+    </script>
+</body>
+</html>

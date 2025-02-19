@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Video Upload</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="script.js"></script>
+</head>
+<body>
+    <div class="upload-container">
+        <div class="upload-header">
+            <h1>Upload Your Video Securely</h1>
+            <p>Share your moments with confidence</p>
+        </div>
+        
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="videoTitle">Video Title</label>
+                <input type="text" id="videoTitle" name="title" placeholder="Enter video title" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="videoDescription">Description</label>
+                <textarea id="videoDescription" name="description" placeholder="Describe your video" required></textarea>
+            </div>
+            
+            <div class="form-group file-upload">
+                <label for="videoFile">Select Video</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="videoFile" name="video" accept="video/*" required>
+                    <span class="file-custom"></span>
+                </div>
+            </div>
+            
+            <button type="submit" class="upload-button">
+                <span>Upload Video</span>
+            </button>
+        </form>
+        
+        <div id="status" class="status-message"></div>
+    </div>
+</body>
+</html>
